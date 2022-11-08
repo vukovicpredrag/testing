@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -485,16 +486,21 @@ class OrderController extends Controller
     public function table(Request $request)
     {
 
-        $columns = [ 'name', 'name', 'address', 'location', 'history', 'postal', 'phone_number', 'order_page_url', 'product', 'variation', 'second_variation',  'third_variation', 'quantity', 'price', 'package_safety',
-            'priority_delivery', 'one_year_warranty', 'surprise_package', 'postage', 'total_price', 'status', 'order_type', 'comment', 'created_at'
+
+        $columns = [ '', 'id', 'created_at', 'status', 'name',  'address',  'postal', 'location',  'phone_number', 'history',
+            'order_page_url', 'product', 'variation', 'second_variation', 'third_variation', 'quantity',
+            'price', 'package_safety', 'priority_delivery', 'one_year_warranty', 'surprise_package', 'postage', 'total_price',
+            'comment', '',
         ];
 
         $limit = $request -> get('length');
         $start = $request -> get( 'start');
         $orderColumn = $columns[$request->input('order.0.column')];
+
+
         $direction = $request -> input('order.0.dir');
 
-        $count = Order::count();
+        $count = Order::whereNotNull('id');
 
         $orders = Order::offset($start)
             ->limit($limit)
@@ -565,6 +571,7 @@ class OrderController extends Controller
 
                 $query -> where( 'name', 'LIKE', "%{$search}%" )
                     ->orWhere( 'created_at', 'LIKE', "%{$search}%" )
+                    ->orWhere( 'phone_number', 'LIKE', "%{$search}%" )
                     ->orWhere( 'product', 'LIKE', "%{$search}%" );
             });
 
@@ -572,18 +579,73 @@ class OrderController extends Controller
 
                 $query -> where( 'name', 'LIKE', "%{$search}%" )
                     ->orWhere( 'created_at', 'LIKE', "%{$search}%" )
+                    ->orWhere( 'phone_number', 'LIKE', "%{$search}%" )
+
                     ->orWhere( 'product', 'LIKE', "%{$search}%" );
             });
         }
 
 
-        $orders = $orders->where('deleted',0)->get();
+
+        $ordersFiltered  -> where( 'crossell', '!=', '1')->where('deleted', '!=', '1');
+
+        $orders -> where('created_at', '>', now()->subDays(15)->endOfDay());
+        $ordersFiltered -> where('created_at', '>', now()->subDays(15)->endOfDay());
+        $count -> where('created_at', '>', now()->subDays(15)->endOfDay());
+        $count = $count ->count();
+
+
+        $ordersFiltered = $ordersFiltered->where('deleted',0)->where('crossell',0)->get();
+
+        $orders = $orders->where('deleted',0)->where('crossell',0)->get();
         $statuses = Status::all();
+
 
 
         $data = [];
 
         foreach( $orders as $order ) {
+
+            $crossels = Order::where('crossell',1)->where('order_page_url', $order->order_page_url)
+                ->where('phone_number', $order->phone_number)->get(['product', 'total_price']);
+
+
+            $productName = '';
+            $allCrossels = '';
+            if($order -> products){
+                $productName =  $order -> products -> name;
+            }
+
+            if(count($crossels)){
+
+                $allCrossels = [];
+                $priceSum = [];
+
+                $allCrossels[] = $productName . ' [' . $order -> product .']';
+                $priceSum[] = $order -> total_price;
+
+                foreach ($crossels as $cross){
+
+                    $allCrossels[] =  $cross -> products -> name . ' [' . $cross -> product .']';
+                    $priceSum[] = $cross -> total_price;
+
+                }
+
+                $allCrossels = implode(' + ', $allCrossels);
+                $total_price = array_sum($priceSum);
+
+            }
+
+            if($allCrossels){
+                $pName = $allCrossels;
+                $total_price = number_format($total_price, 2);
+            }else{
+                $pName = $productName . ' [' . $order -> product .']';
+                $total_price = $order -> total_price;
+
+
+            }
+
 
             $currentOrder = Order::where('phone_number', $order -> phone_number )->where('deleted', 0)->where('crossell', 0)->get();
             $currentOrder -> contains ('status', 'Returned') ? $hasReturned = 1 : $hasReturned = 0;
@@ -618,15 +680,17 @@ class OrderController extends Controller
             $orderType .= '</select>';
             //end order type
 
-            $productName = '';
-            if($order -> products){
-                $productName =  $order -> products -> name;
-            }
 
             $variation_1 = $order -> variation ? $order -> variation . '  ' .  $order -> variation_2 : '';
             $variation_2 = $order -> second_variation ? $order -> second_variation . '  ' .  $order -> second_variation_2 : '';
             $variation_3 = $order -> third_variation ? $order -> third_variation . '  ' .  $order -> third_variation_2 : '';
 
+            if($order -> comment){
+                $comment = '<span class="comented">' . $order -> comment . '</span>';
+            }else{
+                $comment = $order -> comment;
+
+            }
 
             //menage
             $menage = '<button  style="width:70px" class="btn btn-primary edit-order" data-order-id="'. $order -> id .'"  data-toggle="modal" data-target="#editUser">Edit</button>';
@@ -634,6 +698,7 @@ class OrderController extends Controller
             //end menage
 
             $nestedData = [];
+            $nestedData[ 'id' ] = $order -> id;
             $nestedData[ 'all' ] = "<input name='orderd' type='checkbox' class='checkbox' value=". $order -> id .">";
             $nestedData[ 'name' ] =  $order -> name;
             $nestedData[ 'address' ] =  $order -> crossell ? '' :$order -> address;
@@ -641,8 +706,8 @@ class OrderController extends Controller
             $nestedData[ 'history' ] = $order -> crossell ? '' :  '<span>' . '<a class="'.$historyClass.'" style="color:white" href="' . route('orders.history', $order -> phone_number) . '" target="_blank">' .$ordersHistory. '</a></span>';;
             $nestedData[ 'postal' ] = $order -> crossell ? '' : $order -> postal;
             $nestedData[ 'phone_number' ] = $order -> phone_number;
-            $nestedData[ 'order_page_url' ] = $order -> crossell ? '' :  '<a target="_blank" href="'.$order -> order_page_url .'">' . $order -> order_page_url;
-            $nestedData[ 'product' ] =  $productName . ' [' . $order -> product .']';
+            $nestedData[ 'order_page_url' ] = $order -> crossell ? '' :  '<a target="_blank" href="'.$order -> order_page_url .'">' . Str::limit($order -> order_page_url, 50);
+            $nestedData[ 'product' ] =  $pName;
             $nestedData[ 'variation' ] = $variation_1;
             $nestedData[ 'variation_2' ] = $variation_2;
             $nestedData[ 'variation_3' ] = $variation_3;
@@ -653,10 +718,10 @@ class OrderController extends Controller
             $nestedData[ 'one_year_warranty' ] =$order -> crossell ? '' :  $order -> one_year_warranty;
             $nestedData[ 'surprise_package' ] = $order -> crossell ? '' : $order -> surprise_package;
             $nestedData[ 'postage' ] = $order -> crossell ? '' : $postage;
-            $nestedData[ 'total_price' ] = $order -> total_price;
+            $nestedData[ 'total_price' ] = $total_price;
             $nestedData[ 'status' ] =  $pStatus;
             $nestedData[ 'order_type' ] =  $orderType;
-            $nestedData[ 'comment' ] = $order -> comment;
+            $nestedData[ 'comment' ] = $comment;
             $nestedData[ 'created_at' ] = Carbon::parse($order -> created_at)->format('Y-m-d H:i:s');;
             $nestedData[ 'manage' ] = $menage;
 

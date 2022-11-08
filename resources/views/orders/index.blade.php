@@ -119,12 +119,16 @@
         <thead>
         <tr>
             <th>All<input type="checkbox" id="checkAll"></th>
+            <th>ID</th>
+            <th>Date of Order</th>
+            <th>Status </th>
             <th>Full Name</th>
             <th>Address</th>
-            <th>Location</th>
-            <th>History</th>
             <th>Postal</th>
+            <th>Location</th>
             <th>Phone number</th>
+
+            <th>History</th>
             <th>Page URL</th>
             <th>Product</th>
             <th>Variation 1</th>
@@ -140,282 +144,309 @@
             {{--<th>Bundle Product</th>--}}
             {{--<th>Upsell Product</th>--}}
             <th>Total Price</th>
-            <th>Status </th>
-            <th>Order Type </th>
-            <th>Comment</th>
-            <th>Date of Order</th>
-            <th>Mange</th>
-        </tr>
-        </thead>
-        <tbody>
-        </tbody>
-        <tfoot>
-        <tr>
+             {{--<<th>Order Type </th>--}}
+   <th>Comment</th>
+   <th>Mange</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+<tfoot>
+<tr>
 
-        </tr>
-        </tfoot>
-    </table>
+</tr>
+</tfoot>
+</table>
 
-    <!-- Modal - Edit product -->
-    <div class="modal fade" id="editUser" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document" id="editProducModal">
+<!-- Modal - Edit product -->
+<div class="modal fade" id="editUser" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-lg" role="document" id="editProducModal">
 
-        </div>
-    </div>
+</div>
+</div>
 
 
 @stop
 
 @section('css')
-    <style>
-        .content-wrapper  {
-            min-width: 1400px;
-            width: MAX-CONTENT;
-        }
-        .linkClass{
-            max-width: 280px;
-            word-break: break-all;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
+<style>
+.content-wrapper  {
+   min-width: 1400px;
+   width: MAX-CONTENT;
+}
+.linkClass{
+   max-width: 280px;
+   word-break: break-all;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   overflow: hidden;
 
-        }
-        #loader {
-            border: 16px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 16px solid #3498db;
-            width: 120px;
-            height: 120px;
-            -webkit-animation: spin 2s linear infinite;
-            animation: spin 2s linear infinite;
-            margin-left:30%;
-            margin-top:5%;
-        }
+}
+#loader {
+   border: 16px solid #f3f3f3;
+   border-radius: 50%;
+   border-top: 16px solid #3498db;
+   width: 120px;
+   height: 120px;
+   -webkit-animation: spin 2s linear infinite;
+   animation: spin 2s linear infinite;
+   margin-left:30%;
+   margin-top:5%;
+}
 
 
-        @-webkit-keyframes spin {
-            0% { -webkit-transform: rotate(0deg); }
-            100% { -webkit-transform: rotate(360deg); }
-        }
+@-webkit-keyframes spin {
+   0% { -webkit-transform: rotate(0deg); }
+   100% { -webkit-transform: rotate(360deg); }
+}
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        #orders_filter{
-            float: left;
-            padding-left: 30px;
-        }
+@keyframes spin {
+   0% { transform: rotate(0deg); }
+   100% { transform: rotate(360deg); }
+}
+#orders_filter{
+   float: left;
+   padding-left: 30px;
+}
 
-    </style>
+</style>
 @stop
 
 @section('js')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $("#selectProduct, #selectBonus, #orderUpsell, #selectStatus, #orderType").select2();
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-        $(document).ready(function() {
+<script>
+$("#selectProduct, #selectBonus, #orderUpsell, #selectStatus, #orderType").select2();
 
-            let ordersTable = $('#orders').DataTable({
-                "columnDefs": [
-                    //  { "width": '10%', "targets": 17 },
-                    { "className":'linkClass', "targets": 7 }
+$(document).ready(function() {
 
-                ],
+   let ordersTable = $('#orders').DataTable({
 
-                "pageLength": 50,
-                "processing": true,
-                "serverSide": true,
-                "order": [[23, 'desc']],
-                oLanguage: {sProcessing: "<div id='loader'></div>"},
-                "ajax":{
-                    "url": '{{ route('orders.table') }}',
-                    "data": function (d) {
+       "columnDefs": [
 
-                        d._token     = '{{ csrf_token() }}';
-                        d.product    = $('#selectProduct').val();
-                        d.bonus      = $('#selectBonus').val();
-                        d.upsell     = $('#orderUpsell').val();
-                        d.status     = $('#selectStatus').val();
-                        d.order_type = $('#orderType').val();
-                        d.date_from  = $('#dateFrom').val();
-                        d.date_to    = $('#dateTo').val();
+           { "className":'linkClass', "targets": 7 },
+           { "type": 'num-fmt', "targets": 22 }
 
-                    },
-                    "dataType": "json",
-                    "type" : "POST",
-                },
-                "columns": [
-                    { "data": "all" },
-                    { "data": "name"},
-                    { "data": "address"},
-                    { "data": "location"},
-                    { "data": "history"},
-                    { "data": "postal"},
-                    { "data": "phone_number"},
-                    { "data": "order_page_url"},
-                    { "data": "product"},
-                    { "data": "variation"},
-                    { "data": "variation_2"},
-                    { "data": "variation_3"},
-                    { "data": "quantity"},
-                    { "data": "price"},
-                    { "data": "package_safety"}, //bonus 1
-                    { "data": "priority_delivery"}, // bonus 2
-                    { "data": "one_year_warranty"},  // bonus 3
-                    { "data": "surprise_package"},  // bonus 4
-                    { "data": "postage"},
-                    { "data": "total_price"},
-                    { "data": "status"},
-                    { "data": "order_type"},
-                    { "data": "comment"},
-                    { "data": "created_at"},
-                    { "data": "manage"},
 
-                ]
+       ],
 
-            })
+
+       lengthMenu: [
+           [10, 25, 50, 100, 200],
+           [10, 25, 50, 100, 200],
+       ],
+
+       "pageLength": 50,
+       "processing": true,
+       "serverSide": true,
+       "order": [[2, 'desc']],
+
+       oLanguage: {sProcessing: "<div id='loader'></div>"},
+       "ajax":{
+           "url": '{{ route('orders.table') }}',
+           "data": function (d) {
+
+               d._token     = '{{ csrf_token() }}';
+               d.product    = $('#selectProduct').val();
+               d.bonus      = $('#selectBonus').val();
+               d.upsell     = $('#orderUpsell').val();
+               d.status     = $('#selectStatus').val();
+               d.order_type = $('#orderType').val();
+               d.date_from  = $('#dateFrom').val();
+               d.date_to    = $('#dateTo').val();
+
+           },
+           "dataType": "json",
+           "type" : "POST",
+       },
+       "createdRow": function( row, data, dataIndex ) {
 
 
 
-            var prev_val;
-
-            $(document).on('focus', '.optionsSelect', function (e) {
-                prev_val = $(this).val();
-            })
-
-            $(document).on('change', '.optionsSelect', function (e) {
-                if( $(this).val() == 'Returned'){
-
-                    $(this).blur() // Firefox fix as suggested by AgDude
-                    var success = confirm('Are you sure this order is returned?');
-                    if(success)
-                    {}
-                    else {
-                        $(this).val(prev_val);
-                        return false;
-                    }
-                }
-            });
+           if(  $( row ).find( 'td:eq(9)' ).find('.badge-danger').text() ){
+               $(row).css('background-color', 'red');
+           }
 
 
-            $("#selectProduct, #selectBonus, #orderUpsell, #selectStatus, #orderType, #dateFrom, #dateTo").change( function (){
-                ordersTable.ajax.reload();
-            });
-
-        });
+           if(  $( row ).find( 'td:eq(23)' ).find('.comented').text() ){
+               $(row).css('background-color', 'yellow');
+           }
 
 
+       },
+       "columns": [
+           { "data": "all" },
+           { "data": "id" },
+           { "data": "created_at"},
+           { "data": "status"},
+           { "data": "name"},
+           { "data": "address"},
+           { "data": "postal"},
+           { "data": "location"},
+           { "data": "phone_number"},
+           { "data": "history"},
+           { "data": "order_page_url"},
+           { "data": "product"},
+           { "data": "variation"},
+           { "data": "variation_2"},
+           { "data": "variation_3"},
+           { "data": "quantity"},
+           { "data": "price"},
+           { "data": "package_safety"}, //bonus 1
+           { "data": "priority_delivery"}, // bonus 2
+           { "data": "one_year_warranty"},  // bonus 3
+           { "data": "surprise_package"},  // bonus 4
+           { "data": "postage"},
+           { "data": "total_price"},
+          // { "data": "order_type"},
+           { "data": "comment"},
+           { "data": "manage"},
 
-        $(document).on( 'change', '.optionsSelect', function(e){
+       ]
 
-            var status  = $(this).val();
-            var orderId = $(this).data('order-id');
-
-            $.ajax({
-                url: '{{ route('orders.changeStatus') }}',
-                method: 'POST',
-                data: {status:status, orderId: orderId},
-                success: function () {
-
-                }
-            })
-
-        })
-
-
-        $(document).on( 'change', '.orderType', function(e){
-
-            var type  = $(this).val();
-            var orderId = $(this).data('order-id');
-
-            $.ajax({
-                url: '{{ route('orders.changeType') }}',
-                method: 'POST',
-                data: {type:type, orderId: orderId},
-                success: function () {
-
-                }
-            })
-
-        })
-
-        $('#changeStatus').click( function (e) {
-
-            ordersArray = [];
-
-            var status = $('#changeStatuses').val();
-
-            if( confirm("Are you sure?")){
-
-                $("input:checkbox[name=orderd]:checked").each(function(){
-                    ordersArray.push($(this).val());
-                });
-
-            }
-
-            $.ajax({
-                url: '{{ route('orders.changeStatuses') }}',
-                method: 'POST',
-                data: {status:status, ordersArray: ordersArray},
-                success: function () {
-
-                    location.reload();
+   })
 
 
-                }
-            })
-        })
 
-        $(document).on( 'click', '.edit-order', function(e){
+   var prev_val;
 
-            var orderId = $(this).data('order-id');
+   $(document).on('focus', '.optionsSelect', function (e) {
+       prev_val = $(this).val();
+   })
 
-            $.ajax({
-                url: "{{ route('orders.edit.modal') }}",
-                type: 'POST',
-                data: {  orderId: orderId },
-                success: function( response ) {
-                    $( "#editProducModal" ).html( response );
-                }
+   $(document).on('change', '.optionsSelect', function (e) {
+       if( $(this).val() == 'Returned'){
 
-            })
-        })
-
-        $(document).on( 'click', '.delete-order', function(e){
-
-            e.preventDefault();
-
-            var href = $(this).data('href');
-
-            if( confirm('Are you sure?') ){
-
-                $.ajax({
-                    url: href,
-                    type: 'DELETE',
-                    success: function(){
-
-                        location.reload();
-                    }
-
-                })
-            }
-        })
+           $(this).blur() // Firefox fix as suggested by AgDude
+           var success = confirm('Are you sure this order is returned?');
+           if(success)
+           {}
+           else {
+               $(this).val(prev_val);
+               return false;
+           }
+       }
+   });
 
 
-        $('#checkAll').on('change',function(){
+   $("#selectProduct, #selectBonus, #orderUpsell, #selectStatus, #orderType, #dateFrom, #dateTo").change( function (){
+       ordersTable.ajax.reload();
+   });
 
-            var _val = $(this).is(':checked') ? 1 : 0;
+});
 
-            if( _val == 1 ){
-                $('.checkbox').prop('checked', true);
-            }else{
 
-                $('.checkbox').prop('checked', false);
-            }
 
-        });
+$(document).on( 'change', '.optionsSelect', function(e){
 
-    </script>
+   var status  = $(this).val();
+   var orderId = $(this).data('order-id');
+
+   $.ajax({
+       url: '{{ route('orders.changeStatus') }}',
+       method: 'POST',
+       data: {status:status, orderId: orderId},
+       success: function () {
+
+       }
+   })
+
+})
+
+
+$(document).on( 'change', '.orderType', function(e){
+
+   var type  = $(this).val();
+   var orderId = $(this).data('order-id');
+
+   $.ajax({
+       url: '{{ route('orders.changeType') }}',
+       method: 'POST',
+       data: {type:type, orderId: orderId},
+       success: function () {
+
+       }
+   })
+
+})
+
+$('#changeStatus').click( function (e) {
+
+   ordersArray = [];
+
+   var status = $('#changeStatuses').val();
+
+   if( confirm("Are you sure?")){
+
+       $("input:checkbox[name=orderd]:checked").each(function(){
+           ordersArray.push($(this).val());
+       });
+
+   }
+
+   $.ajax({
+       url: '{{ route('orders.changeStatuses') }}',
+       method: 'POST',
+       data: {status:status, ordersArray: ordersArray},
+       success: function () {
+
+           location.reload();
+
+
+       }
+   })
+})
+
+$(document).on( 'click', '.edit-order', function(e){
+
+   var orderId = $(this).data('order-id');
+
+   $.ajax({
+       url: "{{ route('orders.edit.modal') }}",
+       type: 'POST',
+       data: {  orderId: orderId },
+       success: function( response ) {
+           $( "#editProducModal" ).html( response );
+       }
+
+   })
+})
+
+$(document).on( 'click', '.delete-order', function(e){
+
+   e.preventDefault();
+
+   var href = $(this).data('href');
+
+   if( confirm('Are you sure?') ){
+
+       $.ajax({
+           url: href,
+           type: 'DELETE',
+           success: function(){
+
+               location.reload();
+           }
+
+       })
+   }
+})
+
+
+$('#checkAll').on('change',function(){
+
+   var _val = $(this).is(':checked') ? 1 : 0;
+
+   if( _val == 1 ){
+       $('.checkbox').prop('checked', true);
+   }else{
+
+       $('.checkbox').prop('checked', false);
+   }
+
+});
+
+</script>
+<script src="https://cdn.datatables.net/plug-ins/1.12.1/sorting/formatted-numbers.js"></script>
+
 @stop

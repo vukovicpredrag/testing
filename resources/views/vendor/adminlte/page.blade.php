@@ -13,6 +13,7 @@
     @yield('css')
     <link rel="stylesheet" href="//cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
 
+
 @stop
 
 @section('classes_body', $layoutHelper->makeBodyClasses())
@@ -70,6 +71,9 @@
     @stack('js')
     @yield('js')
     <script src="//cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+
+
+
     <script>
         $.ajaxSetup({
             headers: {
